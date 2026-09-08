@@ -1,0 +1,92 @@
+virtualRtsp:
+  enabled: true
+
+  image:
+    repository: bluenviron/mediamtx
+    tag: latest
+    pullPolicy: Always
+
+  sourceUrl: "rtsp://192.168.0.103:8554/c920"
+  streamName: stream
+
+  service:
+    type: LoadBalancer
+    port: 8554
+    loadBalancerIP: ""
+
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+recorder:
+  enabled: true
+
+  image:
+    repository: linuxserver/ffmpeg
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
+
+  segmentTime: 3600
+
+  video:
+    preset: veryfast
+    crf: 23
+    gop: 40
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+
+  cleanup:
+    image:
+      repository: registry.access.redhat.com/ubi9/ubi-minimal
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    thresholdPercent: 90
+    intervalSeconds: 60
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+  persistence:
+    claimName: camera-recordings
+    size: 30Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+recordingsHttp:
+  enabled: true
+
+  image:
+    repository: docker.io/nginxinc/nginx-unprivileged
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: LoadBalancer
+    port: 8080
+    loadBalancerIP: ""
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

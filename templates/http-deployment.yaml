@@ -1,0 +1,56 @@
+{{- if .Values.recordingsHttp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camera-recordings-http
+
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: camera-recordings-http
+
+  template:
+    metadata:
+      labels:
+        app: camera-recordings-http
+
+    spec:
+      containers:
+
+        - name: http
+
+          image: "{{ .Values.recordingsHttp.image.repository }}:{{ .Values.recordingsHttp.image.tag }}"
+          imagePullPolicy: {{ .Values.recordingsHttp.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.recordingsHttp.service.port }}
+              protocol: TCP
+
+          resources:
+{{ toYaml .Values.recordingsHttp.resources | indent 12 }}
+
+          volumeMounts:
+            - name: recordings
+              mountPath: /recordings
+              readOnly: true
+
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+
+      volumes:
+        - name: recordings
+          persistentVolumeClaim:
+            claimName: {{ .Values.recorder.persistence.claimName }}
+
+        - name: nginx-config
+          configMap:
+            name: camera-recordings-nginx
+{{- end }}

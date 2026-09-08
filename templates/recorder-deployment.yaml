@@ -1,0 +1,127 @@
+{{- if .Values.recorder.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camera-recorder
+
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: camera-recorder
+
+  template:
+    metadata:
+      labels:
+        app: camera-recorder
+
+    spec:
+      containers:
+
+        - name: recorder
+
+          image: "{{ .Values.recorder.image.repository }}:{{ .Values.recorder.image.tag }}"
+          imagePullPolicy: {{ .Values.recorder.image.pullPolicy }}
+
+          env:
+            - name: TZ
+              value: {{ .Values.recorder.timezone | quote }}
+
+          command:
+            - /bin/bash
+            - -c
+            - |
+              exec ffmpeg \
+                -rtsp_transport tcp \
+                -i rtsp://virtual-rtsp-1:8554/{{ .Values.virtualRtsp.streamName }} \
+                -map 0:v \
+                -vf "drawtext=text='%{localtime\:%Y-%m-%d_%H-%M-%S}':x=20:y=20:fontsize=32:fontcolor=white:box=1:boxcolor=black@0.5" \
+                -c:v libx264 \
+                -preset {{ .Values.recorder.video.preset }} \
+                -crf {{ .Values.recorder.video.crf }} \
+                -g {{ .Values.recorder.video.gop }} \
+                -keyint_min {{ .Values.recorder.video.gop }} \
+                -sc_threshold 0 \
+                -pix_fmt yuv420p \
+                -f segment \
+                -segment_time {{ .Values.recorder.segmentTime }} \
+                -reset_timestamps 1 \
+                -strftime 1 \
+                '/recordings/%Y-%m-%d_%H-%M-%S.mkv'
+
+          resources:
+{{ toYaml .Values.recorder.resources | indent 12 }}
+
+          volumeMounts:
+            - name: recordings
+              mountPath: /recordings
+
+        - name: cleanup
+
+          image: "{{ .Values.recorder.cleanup.image.repository }}:{{ .Values.recorder.cleanup.image.tag }}"
+          imagePullPolicy: {{ .Values.recorder.cleanup.image.pullPolicy }}
+
+          env:
+            - name: TZ
+              value: {{ .Values.recorder.timezone | quote }}
+
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "camera recording cleanup started"
+
+              while true; do
+
+                usage=$(df -P /recordings | awk 'NR==2 {gsub("%","",$5); print $5}')
+
+                echo "$(date) PVC usage: ${usage}%"
+
+                while [ "$usage" -ge {{ .Values.recorder.cleanup.thresholdPercent }} ]; do
+
+                  oldest=$(
+                    find /recordings \
+                      -maxdepth 1 \
+                      -type f \
+                      -name '*.mkv' \
+                      -printf '%T@ %p\n' \
+                    | sort -n \
+                    | head -n -1 \
+                    | head -n 1 \
+                    | cut -d' ' -f2-
+                  )
+
+                  if [ -z "$oldest" ]; then
+                    echo "$(date) no completed recording available for deletion"
+                    break
+                  fi
+
+                  echo "$(date) deleting oldest recording: $oldest"
+
+                  rm -f -- "$oldest"
+
+                  usage=$(df -P /recordings | awk 'NR==2 {gsub("%","",$5); print $5}')
+
+                  echo "$(date) PVC usage after deletion: ${usage}%"
+
+                done
+
+                sleep {{ .Values.recorder.cleanup.intervalSeconds }}
+              done
+
+          resources:
+{{ toYaml .Values.recorder.cleanup.resources | indent 12 }}
+
+          volumeMounts:
+            - name: recordings
+              mountPath: /recordings
+
+      volumes:
+        - name: recordings
+          persistentVolumeClaim:
+            claimName: {{ .Values.recorder.persistence.claimName }}
+{{- end }}

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: camera-stack
+description: Camera RTSP proxy, recorder and recordings HTTP server
+type: application
+
+version: 0.1.0
+appVersion: "1.0"

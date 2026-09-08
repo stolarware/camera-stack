@@ -1,0 +1,19 @@
+{{- if .Values.recorder.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.recorder.persistence.claimName }}
+spec:
+  accessModes:
+    - {{ .Values.recorder.persistence.accessMode }}
+
+  {{- with .Values.recorder.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+
+  volumeMode: Filesystem
+
+  resources:
+    requests:
+      storage: {{ .Values.recorder.persistence.size }}
+{{- end }}

@@ -1,0 +1,18 @@
+{{- if .Values.virtualRtsp.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: virtual-rtsp-1-config
+data:
+  mediamtx.yml: |
+    logLevel: info
+
+    rtsp: yes
+    rtspTransports: [tcp]
+    rtspAddress: :8554
+
+    paths:
+      {{ .Values.virtualRtsp.streamName }}:
+        source: {{ .Values.virtualRtsp.sourceUrl }}
+        rtspTransport: tcp
+{{- end }}

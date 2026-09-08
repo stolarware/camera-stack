@@ -1,0 +1,21 @@
+{{- if .Values.virtualRtsp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtual-rtsp-1
+spec:
+  type: {{ .Values.virtualRtsp.service.type }}
+
+  {{- with .Values.virtualRtsp.service.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+
+  selector:
+    app: virtual-rtsp-1
+
+  ports:
+    - name: rtsp
+      port: {{ .Values.virtualRtsp.service.port }}
+      targetPort: rtsp
+      protocol: TCP
+{{- end }}

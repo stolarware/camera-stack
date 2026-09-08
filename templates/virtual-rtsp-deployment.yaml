@@ -1,0 +1,45 @@
+{{- if .Values.virtualRtsp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: virtual-rtsp-1
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: virtual-rtsp-1
+
+  template:
+    metadata:
+      labels:
+        app: virtual-rtsp-1
+
+    spec:
+      containers:
+        - name: mediamtx
+
+          image: "{{ .Values.virtualRtsp.image.repository }}:{{ .Values.virtualRtsp.image.tag }}"
+          imagePullPolicy: {{ .Values.virtualRtsp.image.pullPolicy }}
+
+          ports:
+            - name: rtsp
+              containerPort: 8554
+              protocol: TCP
+
+          resources:
+{{ toYaml .Values.virtualRtsp.resources | indent 12 }}
+
+          volumeMounts:
+            - name: config
+              mountPath: /mediamtx.yml
+              subPath: mediamtx.yml
+
+      volumes:
+        - name: config
+          configMap:
+            name: virtual-rtsp-1-config
+{{- end }}

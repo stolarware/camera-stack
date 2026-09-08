@@ -1,0 +1,6 @@
+# Rendered Helm output
+camera-stack.yaml
+
+# Editor/temp files
+*.swp
+*~

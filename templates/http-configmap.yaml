@@ -1,0 +1,27 @@
+{{- if .Values.recordingsHttp.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: camera-recordings-nginx
+
+data:
+  default.conf: |
+    server {
+        listen {{ .Values.recordingsHttp.service.port }};
+        server_name _;
+
+        root /recordings;
+
+        location / {
+            autoindex on;
+            autoindex_exact_size off;
+            autoindex_localtime on;
+
+            types {
+                video/x-matroska mkv;
+            }
+
+            add_header Cache-Control "no-store";
+        }
+    }
+{{- end }}
