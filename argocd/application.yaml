@@ -20,3 +20,8 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: kamery
+    
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
