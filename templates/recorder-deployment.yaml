@@ -75,13 +75,17 @@ spec:
             - |
               echo "camera recording cleanup started"
 
+              MAX_FILES={{ .Values.recorder.cleanup.maxFiles }}
+              MAX_USAGE={{ .Values.recorder.cleanup.thresholdPercent }}
+
               while true; do
 
                 usage=$(df -P /recordings | awk 'NR==2 {gsub("%","",$5); print $5}')
+                count=$(find /recordings -maxdepth 1 -type f -name '*.mkv' | wc -l)
 
-                echo "$(date) PVC usage: ${usage}%"
+                echo "$(date) recordings: ${count}/${MAX_FILES}, PVC usage: ${usage}%"
 
-                while [ "$usage" -ge {{ .Values.recorder.cleanup.thresholdPercent }} ]; do
+                while [ "$count" -gt "$MAX_FILES" ] || [ "$usage" -ge "$MAX_USAGE" ]; do
 
                   oldest=$(
                     find /recordings \
@@ -105,8 +109,9 @@ spec:
                   rm -f -- "$oldest"
 
                   usage=$(df -P /recordings | awk 'NR==2 {gsub("%","",$5); print $5}')
+                  count=$(find /recordings -maxdepth 1 -type f -name '*.mkv' | wc -l)
 
-                  echo "$(date) PVC usage after deletion: ${usage}%"
+                  echo "$(date) after deletion: recordings=${count}/${MAX_FILES}, PVC=${usage}%"
 
                 done
 

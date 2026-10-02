@@ -54,6 +54,7 @@ recorder:
       pullPolicy: IfNotPresent
 
     thresholdPercent: 90
+    maxFiles: 100
     intervalSeconds: 60
 
     resources:
