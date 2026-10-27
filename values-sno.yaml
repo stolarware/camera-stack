@@ -6,7 +6,7 @@ virtualRtsp:
 
 recorder:
   persistence:
-    storageClass: lvms-vg1-immediate
+    storageClass: lvms-vg1
     size: 30Gi
 
 recordingsHttp:
