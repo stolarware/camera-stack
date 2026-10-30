@@ -41,7 +41,7 @@ recorder:
 
   resources:
     requests:
-      cpu: 100m
+      cpu: 80m
       memory: 256Mi
     limits:
       cpu: "2"
